@@ -1,0 +1,50 @@
+Majority following this tutorial https://www.youtube.com/watch?v=m4i_kkx50lw
+
+First download OpenVPN Connect (https://openvpn.net/client/)
+Also make sure you are not double natted - my isp was, so I had to get them to remove their private ip
+
+=============================
+In pve create Container with 'ubuntu-20.04-standard_20.04-1_amd64.tar.gz' template
+   - Using all defaults
+Make sure machine does not startup once finished
+
+On pve console:
+	cd /etc/pve/lxc
+	nano xxx.conf     (whatever box the created template above is)
+
+In this file we need to add the following 2 lines:
+	lxc.cgroup.devices.allow: c 10:200 rwm
+	lxc.mount.entry: /dev/net dev/net none bind,create=dir
+
+Save the file
+	chown 100000:100000 /dev/net/tun
+This command will reconfigure the owner of the file to allow and unplugged which contain access after it begins running
+
+To make sure this worked use this command
+	ls -l /dev/net/tun
+It should look something like:
+	crw-rw-rw- 1 100000 100000 10, 200 Sep 24 19:00 /dev/net/tun
+
+=============================
+Now startup the container we made at the beginning
+
+	apt update && apt upgrade -y
+	apt install openvpn git
+	git clone https://github.com/Nyr/openvpn-install
+	cd openvpn-install
+	bash openvpn-install.sh
+
+I needed to double check my WAN IP found in my router settings (for some reason this was not working previously)
+The rest should be the same
+
+Back in the root folder open the newly created .ovpn configuration file.
+Copy all the contents of that file and paste it on a folder in your desktop.
+
+=============================
+Open your router settings - navigate to Port Forwarding / Virtual Server
+Create a new port forward to the created IP and port we made in the bash command
+
+The .ovpn file that was created in the container - paste all the contents in a folder on our designated computer
+Import that .ovpn file into our OpenVPN Connect application and it should connect!
+
+If it does not, it was not configured correctly. Switch to a phone hotspot to test!
